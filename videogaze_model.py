@@ -15,6 +15,8 @@ import numpy as np
 import torch.utils.model_zoo as model_zoo
 from torch.autograd.variable import Variable
 
+import affine
+
 
 
 model_urls = {
@@ -276,7 +278,8 @@ class VideoGaze(nn.Module):
         cone_parameters = self.cone_pathway(face)
         head_v = cone_parameters[:,0:3]
         variance = nn.Hardtanh(0.5, 0.99)(cone_parameters[:,3])
-        R,t,sigmoid = self.transformation_path(source,target)
+        # R,t,sigmoid = self.transformation_path(source,target)
+        R, t, sigmoid = affine.affine(source, target)
         projection = self.projection(eyes,head_v,R,t,variance)
         projection_simoid = torch.mul(projection,sigmoid.view(-1,1).expand_as(projection))
         
