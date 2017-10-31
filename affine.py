@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import torch.nn
 
 # this function taken taken from
 # https://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
@@ -87,15 +86,16 @@ def affine(source, target):
     sigmoid = None
     if scale > 1:
         sigmoid = 1
-    elif scale < -1:
-        sigmoid = -1
+    elif scale < 0:
+        sigmoid = 0
     else:
         sigmoid = scale
 
     return rotation, translation, sigmoid
 
 def main():
-    affine(cv2.imread('left.jpg'), cv2.imread('right.jpg'))
+    affine(cv2.resize(cv2.imread('left.jpg'), (224, 224)),
+           cv2.resize(cv2.imread('right.jpg'), (224, 224)))
 
 if __name__ == '__main__':
     main()
