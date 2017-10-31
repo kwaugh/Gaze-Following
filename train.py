@@ -19,8 +19,10 @@ import math
 import sklearn.metrics
 
 #Path for file 
-source_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_images"
-face_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_heads"
+#  source_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_images"
+source_path = "data/videogaze_images"
+#  face_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_heads"
+face_path = "data/videogaze_heads"
 target_path = "target"
 
 #Train and test input files. Format is described in README.md 
