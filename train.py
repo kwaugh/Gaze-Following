@@ -19,10 +19,12 @@ import math
 import sklearn.metrics
 
 #Path for file 
-#  source_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_images"
+# source_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_images"
 source_path = "data/videogaze_images"
-#  face_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_heads"
+# source_path = "data/videogaze_images"
+# face_path = "/media/kwaugh/RAID/Documents/visual_recognition/experiment/data/videogaze_heads"
 face_path = "data/videogaze_heads"
+# face_path = "data/videogaze_heads"
 target_path = "target"
 
 #Train and test input files. Format is described in README.md 
@@ -30,9 +32,9 @@ test_file = "test_flag.txt"
 train_file = "train_flag.txt"
 
 #Training parameters
-workers = 30;
-epochs = 900
-batch_size = 200
+workers = 4;
+epochs = 100
+batch_size = 300
 
 base_lr = 0.0001
 momentum = 0.9
@@ -134,7 +136,7 @@ def main():
 
 
 def train(train_loader, model, criterion,criterion_b,optimizer, epoch):
-    global count
+    # global count
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -199,7 +201,7 @@ def train(train_loader, model, criterion,criterion_b,optimizer, epoch):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        count=count+1
+        # count=count+1
 
         print('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'

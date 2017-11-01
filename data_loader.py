@@ -17,7 +17,7 @@ def is_image_file(filename):
 
 def make_dataset(source_path, face_path, target_path,file_name):
     images = []
-    print(file_name)
+    # print(file_name)
     with open(file_name, 'r') as f:
         for line in f:
             line = line[:-1]
@@ -49,7 +49,7 @@ def default_loader(path):
         im = Image.open(path).convert('RGB')
         return im
     except OSError:
-        print(path)
+        # print(path)
         return Image.new("RGB", (512, 512), "white")
 
 

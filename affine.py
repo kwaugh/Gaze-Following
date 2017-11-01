@@ -66,30 +66,20 @@ def matchKeypoints(kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
 # given a source and target frame
 # returns rotation, translation, sigmoid
 def affine(source, target):
-    (kps1, feats1) = detectAndDescribe(source)
-    (kps2, feats2) = detectAndDescribe(target)
+    (kps1, feats1) = detectAndDescribe(np.array(source))
+    (kps2, feats2) = detectAndDescribe(np.array(target))
 
     M = matchKeypoints(kps1, kps2, feats1, feats2, ratio=0.75, reprojThresh=4.0)
     if M is None:
         print('COULD NOT SOLVE FOR HOMOGRAPHY')
-        return None, None, None
+        return 0, 0, 0
 
     (matches, H, status) = M
 
     scale = H[2][2]
     translation = H[0:2, 2]
     rotation = H[0:2, 0:2] / scale
-    # TODO: I don't think this is valid. looks like their other param is
-    # something else
-
-    # replicate torch.nn.Hardtanh
-    sigmoid = None
-    if scale > 1:
-        sigmoid = 1
-    elif scale < 0:
-        sigmoid = 0
-    else:
-        sigmoid = scale
+    sigmoid = 1
 
     return rotation, translation, sigmoid
 
