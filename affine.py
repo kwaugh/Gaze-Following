@@ -28,7 +28,14 @@ def detectAndDescribe(image):
         # detect and extract features from the image
         descriptor = cv2.xfeatures2d.SIFT_create()
         # print('created sift descriptor object')
+        # step_size = 5
+        # mask = np.asarray([cv2.KeyPoint(x, y, step_size)
+        #         for y in range(0, gray.shape[0], step_size)
+        #         for x in range(0, gray.shape[1], step_size)])
+
         (kps, features) = descriptor.detectAndCompute(gray, None)
+        # dense features
+        # (kps, features) = descriptor.compute(gray, mask)
         # print('computed sift features')
 
     # otherwise, we are using OpenCV 2.4.X
@@ -100,7 +107,7 @@ def affine(source, target):
         # print('found feats2')
 
         if feats1 is None or feats2 is None:
-            print('COULD NOT FIND SIFT FEATURES')
+            # print('COULD NOT FIND SIFT FEATURES')
             sigmoid[i] = 0
             continue
         # print()
@@ -147,7 +154,7 @@ def affine(source, target):
     # print('sigmoid_cuda.type():', sigmoid_cuda.type())
     # print('rotation_cuda:', rotation_cuda)
 
-    return rotation_cuda, translation_cuda, sigmoid_cuda
+    return torch.autograd.Variable(rotation_cuda), torch.autograd.Variable(translation_cuda), torch.autograd.Variable(sigmoid_cuda)
 
 def main():
     affine(cv2.resize(cv2.imread('left.jpg'), (224, 224)),
