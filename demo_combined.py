@@ -17,7 +17,7 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 import numpy as np
-from videogaze_model import VideoGaze
+from videogaze_model import CompressedModel
 import cv2
 import math
 from sklearn import metrics
@@ -25,10 +25,9 @@ from config import *
 
 
 #Loading the model
-model = VideoGaze(bs=batch_size,side=20)
-#  checkpoint = torch.load('model.pth.tar')
-#  checkpoint = torch.load('/Users/kapilkrishnakumar/Google Drive/Files/UT Files/Fall 2017/VisualRecognition/Experiment/checkpoint_short.pth.tar', map_location=lambda storage, loc: storage)
-checkpoint = torch.load('/Users/kapilkrishnakumar/Google Drive/Files/UT Files/Fall 2017/VisualRecognition/Experiment/checkpoint_short.pth.tar') 
+model = CompressedModel(bs=batch_size,side=20)
+checkpoint = torch.load('checkpoint_compressed_short_combined.pth.tar')
+
 model.load_state_dict(checkpoint['state_dict'])
 model.cuda()
 cudnn.benchmark = True
@@ -48,6 +47,7 @@ print('Frame List Created')
 #Loading the features for tracking
 p_image = face_recognition.load_image_file("face.jpg")
 p_encoding = face_recognition.face_encodings(p_image)[0]
+print(p_encoding)
 
 
 trans = transforms.ToTensor()
@@ -99,6 +99,7 @@ for i in range(len(frame_list)):
         face_locations = face_recognition.face_locations(im)
         for id,face_local in enumerate(face_locations):
             if results[id]==True:
+                print("DETECTED FACE")
                 (top, right, bottom, left) = face_local
 
         #If detection, run the model
@@ -134,14 +135,13 @@ for i in range(len(frame_list)):
             #Run the model
             source_frame = source_frame.cuda(async=True)
             target_frame = target_frame.cuda(async=True)
-            face_frame = face_frame.cuda(async=True)
-            eyes = eyes.cuda(async=True)
+            #  face_frame = face_frame.cuda(async=True)
+            #  eyes = eyes.cuda(async=True)
             source_frame_var = torch.autograd.Variable(source_frame)
             target_frame_var = torch.autograd.Variable(target_frame)
-            face_frame_var = torch.autograd.Variable(face_frame)
-            eyes_var = torch.autograd.Variable(eyes)
-            output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
-            
+            #  face_frame_var = torch.autograd.Variable(face_frame)
+            #  eyes_var = torch.autograd.Variable(eyes)
+            output,sigmoid= model(source_frame_var,target_frame_var)
 
             #Recover the data from the variables
             sigmoid = sigmoid.data
