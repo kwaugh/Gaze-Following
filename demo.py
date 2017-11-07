@@ -21,6 +21,7 @@ from videogaze_model import VideoGaze
 import cv2
 import math
 from sklearn import metrics
+from config import *
 
 
 #Loading the model
@@ -64,6 +65,7 @@ N = 25
 
 #w_T corresponds to the number of frames to skip when sampling the target window
 w_T = 40
+w_fps = 30
 
 target_frame = torch.FloatTensor(N,3,227,227)
 target_frame = target_frame.cuda()
@@ -96,8 +98,6 @@ for i in range(len(frame_list)):
         for id,face_local in enumerate(face_locations):
             if results[id]==True:
                 (top, right, bottom, left) = face_local
-
-
 
         #If detection, run the model
         if top:
@@ -174,9 +174,3 @@ for i in range(len(frame_list)):
 
 
 target_writer.close()
-
-
-
-
-
-

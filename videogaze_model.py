@@ -284,6 +284,7 @@ class VideoGaze(nn.Module):
         # print('t.type():', t.type())
         # print('sigmoid.type():', sigmoid.type())
         #  R, t, sigmoid = affine.affine(source, target)
+        # R, t, sigmoid = affine.affine(source, target)
         projection = self.projection(eyes,head_v,R,t,variance)
         projection_simoid = torch.mul(projection,sigmoid.view(-1,1).expand_as(projection))
         
