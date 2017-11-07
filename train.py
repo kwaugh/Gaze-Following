@@ -1,4 +1,5 @@
 import argparse
+import sys
 import os
 import shutil
 import time
@@ -13,11 +14,17 @@ import torchvision.datasets as datasets
 import torchvision.models as models
 from data_loader import ImagerLoader
 import numpy as np
-from videogaze_model import VideoGaze
+from videogaze_model import VideoGaze,CompressedModel
 import cv2
 import math
 import sklearn.metrics
 from config import *
+from datetime import datetime
+import pdb
+
+# TACC jobs don't like stdout. Print to stderr
+def eprint(*args, **kwargs):
+    print(str(datetime.now().strftime('%H:%M:%S')),":", *args, file=sys.stderr, **kwargs)
 
 
 #Define the exponential Shifted Grids Loss
@@ -52,7 +59,8 @@ class ExponentialShiftedGrids(nn.Module):
 def main():
     global args, best_prec1,weight_decay,momentum
 
-    model = VideoGaze(batch_size)
+    #  model = VideoGaze(bs=batch_size,side=side_w)
+    model = CompressedModel(bs=batch_size,side=side_w)
 
     model.cuda()
 
@@ -61,6 +69,7 @@ def main():
     cudnn.benchmark = True
 
     
+    eprint("Training DataLoader") 
     #Define training loader
     train_loader = torch.utils.data.DataLoader(
         ImagerLoader(source_path,face_path,target_path,train_file,transforms.Compose([
@@ -69,6 +78,7 @@ def main():
         batch_size=batch_size, shuffle=True,
         num_workers=workers, pin_memory=True)
 
+    eprint("Validation DataLoader") 
     #Define validation loader
     val_loader = torch.utils.data.DataLoader(
         ImagerLoader(source_path,face_path,target_path,test_file,transforms.Compose([
@@ -87,8 +97,10 @@ def main():
                                 momentum=momentum,
                                 weight_decay=weight_decay)
 
+
     #Training loop
     for epoch in range(0, epochs):
+        eprint("Start EPOCH: %d" % (epoch))
 
         adjust_learning_rate(optimizer, epoch)
 
@@ -97,7 +109,7 @@ def main():
 
         # evaluate on validation set
         prec1 = validate(val_loader, model, criterion,criterion_b)
-
+        eprint("Post Validation: %d, prec1: %d" % (epoch, prec1))
         # remember best prec@1 and save checkpoint
         is_best = prec1 > best_prec1
         best_prec1 = max(prec1, best_prec1)
@@ -110,6 +122,7 @@ def main():
 
 def train(train_loader, model, criterion,criterion_b,optimizer, epoch):
     # global count
+    eprint("Start of Train Function")
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -117,13 +130,15 @@ def train(train_loader, model, criterion,criterion_b,optimizer, epoch):
     top5 = AverageMeter()
     topb = AverageMeter()
     l2 = AverageMeter()
-
+    eprint("Defined Meters")
     # switch to train mode
     model.train()
+    eprint("After Train Model")
 
     end = time.time()
 
     for i, (source_frame,target_frame,face_frame,eyes,target_i,gaze_float,binary_tensor) in enumerate(train_loader):
+        eprint("BeforeBatchTrain: ", i)
         #Convert target values into grid format
         target = float2grid(target_i,side_w)
         target = target.float()
@@ -138,7 +153,6 @@ def train(train_loader, model, criterion,criterion_b,optimizer, epoch):
         binary_tensor = binary_tensor.cuda(async=True)
         target_i = target_i.cuda(async=True)
 
-
         source_frame_var = torch.autograd.Variable(source_frame)
         target_frame_var = torch.autograd.Variable(target_frame)
         face_frame_var = torch.autograd.Variable(face_frame)
@@ -147,7 +161,8 @@ def train(train_loader, model, criterion,criterion_b,optimizer, epoch):
         binary_var = torch.autograd.Variable(binary_tensor.view(-1))
 
         # compute output
-        output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
+        #  output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
+        output,sigmoid= model(source_frame_var,target_frame_var)
 
         #Compute loss
         loss_l2 = criterion(output, target_var)
@@ -176,7 +191,7 @@ def train(train_loader, model, criterion,criterion_b,optimizer, epoch):
 
         # count=count+1
 
-        print('Epoch: [{0}][{1}/{2}]\t'
+        eprint('Epoch: [{0}][{1}/{2}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
@@ -223,7 +238,8 @@ def validate(val_loader, model, criterion,criterion_b):
         binary_var = torch.autograd.Variable(binary_tensor.view(-1))
 
         # compute output
-        output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
+        #  output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
+        output,sigmoid= model(source_frame_var,target_frame_var)
 
         #Compute loss
         loss_l2 = criterion(output, target_var)
@@ -245,7 +261,7 @@ def validate(val_loader, model, criterion,criterion_b):
         end = time.time()
 
 
-        print('Epoch: [{0}/{1}]\t'
+        eprint('Epoch: [{0}/{1}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})\t'
@@ -258,10 +274,10 @@ def validate(val_loader, model, criterion,criterion_b):
     return l2.avg
 
 
-def save_checkpoint(state, is_best, filename='checkpoint_short.pth.tar'):
+def save_checkpoint(state, is_best, filename=checkpoint_name):
     torch.save(state, filename)
     if is_best:
-        shutil.copyfile(filename, 'model_best_shape2.pth.tar')
+        shutil.copyfile(filename, best_model_name)
 
 
 class AverageMeter(object):

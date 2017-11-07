@@ -14,6 +14,7 @@ import torchvision.models as models
 import numpy as np
 import torch.utils.model_zoo as model_zoo
 from torch.autograd.variable import Variable
+import pdb
 
 import affine
 
@@ -278,11 +279,11 @@ class VideoGaze(nn.Module):
         cone_parameters = self.cone_pathway(face)
         head_v = cone_parameters[:,0:3]
         variance = nn.Hardtanh(0.5, 0.99)(cone_parameters[:,3])
-        # R,t,sigmoid = self.transformation_path(source,target)
+        R,t,sigmoid = self.transformation_path(source,target)
         # print('R.type():', R.type())
         # print('t.type():', t.type())
         # print('sigmoid.type():', sigmoid.type())
-        R, t, sigmoid = affine.affine(source, target)
+        #  R, t, sigmoid = affine.affine(source, target)
         projection = self.projection(eyes,head_v,R,t,variance)
         projection_simoid = torch.mul(projection,sigmoid.view(-1,1).expand_as(projection))
         
@@ -297,4 +298,60 @@ class VideoGaze(nn.Module):
         output = output.view(-1,1,self.side,self.side)
 
         return output,output_sigmoid_l2
+
+
+'''
+This is separate from the above models that are used insequence
+Gameplan:
+
+    Have 2 networks that are pretrained on AlexNet
+    Concatenate outputs of these networks
+    Use a couple of fully connected layers to go from the layers to a output representation in 2d
+    Or use upconvolutions to go to a grid size
+    Get the features of these networks that feed in
+
+'''
+class CompressedModel(nn.Module):
+
+    def __init__(self, bs=200, side=20):
+        super(CompressedModel, self).__init__()
+        self.source_pathway = HeadPoseAlexnet()
+        self.source_pathway.load_state_dict(model_zoo.load_url(model_urls['alexnet'])) 
+        self.target_pathway = HeadPoseAlexnet()
+        self.target_pathway.load_state_dict(model_zoo.load_url(model_urls['alexnet'])) 
+
+        self.fusion_init = nn.Sequential(
+                nn.Dropout(),
+                nn.Linear(2 * 256 * 6 * 6, 4096),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(4096, 400),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(400, side*side),
+                nn.ReLU(inplace=True),
+        )
+        self.final_layer = nn.Linear(side*side, side*side)
+        #  self.sigmoid = nn.Linear(200, 1)
+        self.sigmoid = nn.Linear(side*side, 1)
+        #  self.final_layer = nn.Linear(100, side*side)
+        self.side = side
+        self.bs = bs
+
+    def forward(self, source, target):
+        source_op = self.source_pathway(source)
+        target_op = self.target_pathway(target)
+        combined = torch.cat((source_op, target_op), 1)
+        combined = combined.view(combined.size(0), -1)
+
+        fused_op = self.fusion_init(combined)
+        fc_output = self.final_layer(fused_op)
+
+        output_sigmoid = self.sigmoid(fc_output)
+        output_sigmoid = nn.Sigmoid()(output_sigmoid)
+        output_sigmoid = output_sigmoid.view(output_sigmoid.size(0))
+
+        output = nn.Softmax()(fc_output)
+        output = output.view(-1, 1, self.side, self.side)
+        return output, output_sigmoid
 
