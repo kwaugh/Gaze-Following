@@ -280,10 +280,6 @@ class VideoGaze(nn.Module):
         head_v = cone_parameters[:,0:3]
         variance = nn.Hardtanh(0.5, 0.99)(cone_parameters[:,3])
         R,t,sigmoid = self.transformation_path(source,target)
-        # print('R.type():', R.type())
-        # print('t.type():', t.type())
-        # print('sigmoid.type():', sigmoid.type())
-        #  R, t, sigmoid = affine.affine(source, target)
         # R, t, sigmoid = affine.affine(source, target)
         projection = self.projection(eyes,head_v,R,t,variance)
         projection_simoid = torch.mul(projection,sigmoid.view(-1,1).expand_as(projection))

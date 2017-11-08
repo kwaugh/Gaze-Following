@@ -35,7 +35,7 @@ cudnn.benchmark = True
 
 
 #Reading input video
-video_name = 'video_test.mp4'
+video_name = 'input.mp4'
 vid = imageio.get_reader(video_name,  'ffmpeg')
 fps = vid.get_meta_data()['fps']
 frame_list = []
@@ -63,11 +63,11 @@ target_writer = imageio.get_writer('output.mp4', fps=fps)
 
 
 #N corresponds to the number of frames in the window to explore
-N = 25
+N = 150
 
 #w_T corresponds to the number of frames to skip when sampling the target window
 w_T = 40
-w_fps = 30
+w_fps = 1
 
 target_frame = torch.FloatTensor(N,3,227,227)
 target_frame = target_frame.cuda()
@@ -85,7 +85,8 @@ for i in range(len(frame_list)):
     print('Processing of frame %d out of %d' % (i,len(frame_list)))
 
     #Avoid the problems with the video limit
-    if i>w_fps*(N-1)//2 and i<(len(frame_list)-w_fps*(N-1)//2):
+    # if i>w_fps*(N-1)//2 and i<(len(frame_list)-w_fps*(N-1)//2):
+    if True:
         
         #Reading the image 
         top=False
@@ -126,7 +127,10 @@ for i in range(len(frame_list)):
 
             #Fill the targets for the exploring window. 
             for j in range(N):
-                target_im = frame_list[i+w_fps*(j-((N-1)//2))]
+                idx = i+w_fps*(j-((N-1)//2))
+                if idx >= len(frame_list) or idx < 0:
+                    continue
+                target_im = frame_list[idx]
                 target_im = cv2.resize(target_im,(227,227))
                 target_im = trans(target_im)
                 target_frame[j,:,:,:] = target_im

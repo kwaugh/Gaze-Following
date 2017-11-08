@@ -20,7 +20,7 @@ train_file = "train_flag.txt"
 
 #Training parameters
 workers = 4;
-epochs = 30
+epochs = 6
 batch_size = 100
 
 base_lr = 0.0001

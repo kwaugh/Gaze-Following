@@ -28,14 +28,15 @@ def detectAndDescribe(image):
         # detect and extract features from the image
         descriptor = cv2.xfeatures2d.SIFT_create()
         # print('created sift descriptor object')
-        # step_size = 5
-        # mask = np.asarray([cv2.KeyPoint(x, y, step_size)
-        #         for y in range(0, gray.shape[0], step_size)
-        #         for x in range(0, gray.shape[1], step_size)])
-
-        (kps, features) = descriptor.detectAndCompute(gray, None)
+        step_size = 5
+        mask = np.asarray([cv2.KeyPoint(x, y, step_size)
+                for y in range(0, gray.shape[0], step_size)
+                for x in range(0, gray.shape[1], step_size)])
         # dense features
-        # (kps, features) = descriptor.compute(gray, mask)
+        (kps, features) = descriptor.compute(gray, mask)
+
+        # sparse features
+        # (kps, features) = descriptor.detectAndCompute(gray, None)
         # print('computed sift features')
 
     # otherwise, we are using OpenCV 2.4.X
@@ -95,12 +96,12 @@ def affine(source, target):
     numpy_source = source.data.cpu().numpy()
     numpy_target = target.data.cpu().numpy()
 
-    translation = np.zeros((config.batch_size, 3))
-    rotation = np.zeros((config.batch_size, 3, 3))
-    sigmoid = np.zeros(config.batch_size)
+    translation = np.zeros((numpy_source.shape[0], 3))
+    rotation = np.zeros((numpy_source.shape[0], 3, 3))
+    sigmoid = np.zeros(numpy_source.shape[0])
 
     # TODO: consider doing this on the GPU because CPU side it'll be hella slow
-    for i in range(config.batch_size):
+    for i in range(numpy_source.shape[0]):
         (kps1, feats1) = detectAndDescribe(numpy_source[i])
         # print('found feats1')
         (kps2, feats2) = detectAndDescribe(numpy_target[i])
@@ -118,12 +119,12 @@ def affine(source, target):
         # print('feats2.shape:', feats2.shape)
         M = matchKeypoints(kps1, kps2, feats1, feats2, ratio=0.75, reprojThresh=4.0)
 
-        if M is None:
-            print('COULD NOT SOLVE FOR HOMOGRAPHY')
+        if M is None or M[1] is None:
+            # print('COULD NOT SOLVE FOR HOMOGRAPHY')
             sigmoid[i] = 0
             continue
 
-        print('found a homography')
+        # print('found a homography')
 
         (matches, H, status) = M
         scale = H[2][2]
