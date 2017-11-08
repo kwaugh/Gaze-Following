@@ -31,3 +31,10 @@ Temporary Items
 .apdisk
 
 *.pyc
+
+*.tar
+*.mp4
+*.pth
+checkpoint_*
+results
+face.jpg

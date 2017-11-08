@@ -1,0 +1,6 @@
+AUC   |  KL     |  Desc
+-------------------------------------------------------------
+73.7  |  9.216  |  Adria model with transformation pathway
+60.2  |  7.79   |  Adria model with sparse affine
+60.2  |  7.79   |  Adria model with dense affine
+60.9  |  7.827  |  Combined model with transformation pathway

@@ -34,7 +34,7 @@ cudnn.benchmark = True
 
 
 #Reading input video
-video_name = 'video_test.mp4'
+video_name = 'input.mp4'
 vid = imageio.get_reader(video_name,  'ffmpeg')
 fps = vid.get_meta_data()['fps']
 frame_list = []
