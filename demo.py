@@ -26,9 +26,9 @@ from config import *
 
 #Loading the model
 model = VideoGaze(bs=batch_size,side=20)
-#  checkpoint = torch.load('model.pth.tar')
+checkpoint = torch.load('model.pth.tar')
 #  checkpoint = torch.load('/Users/kapilkrishnakumar/Google Drive/Files/UT Files/Fall 2017/VisualRecognition/Experiment/checkpoint_short.pth.tar', map_location=lambda storage, loc: storage)
-checkpoint = torch.load('/Users/kapilkrishnakumar/Google Drive/Files/UT Files/Fall 2017/VisualRecognition/Experiment/checkpoint_short.pth.tar') 
+# checkpoint = torch.load('/Users/kapilkrishnakumar/Google Drive/Files/UT Files/Fall 2017/VisualRecognition/Experiment/checkpoint_short.pth.tar') 
 model.load_state_dict(checkpoint['state_dict'])
 model.cuda()
 cudnn.benchmark = True
@@ -63,7 +63,7 @@ target_writer = imageio.get_writer('output.mp4', fps=fps)
 
 
 #N corresponds to the number of frames in the window to explore
-N = 150
+N = 60
 
 #w_T corresponds to the number of frames to skip when sampling the target window
 w_T = 40
@@ -146,7 +146,6 @@ for i in range(len(frame_list)):
             eyes_var = torch.autograd.Variable(eyes)
             output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
             
-
             #Recover the data from the variables
             sigmoid = sigmoid.data
             output = output.data

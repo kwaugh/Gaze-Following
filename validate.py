@@ -78,24 +78,24 @@ def validate_stats(val_loader, model, criterion,criterion_b):
         binary_var = torch.autograd.Variable(binary_tensor.view(-1))
 
         # compute output
-        # output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
-        output,sigmoid= model(source_frame_var,target_frame_var)
-        #  pdb.set_trace()
+        output,sigmoid= model(source_frame_var,target_frame_var,face_frame_var,eyes_var)
+        # output,sigmoid= model(source_frame_var,target_frame_var)
+
         ground_truth_gaze = transformToMap(gaze_float)
         prediction_grid = output.data.cpu().numpy()
         to_skip = False
         for b in range(prediction_grid.shape[0]):
-            fpr, tpr, thresholds = metrics.roc_curve(ground_truth_gaze[b].flatten(), prediction_grid[b].flatten())
+            # auc is undefined if ground_truth is all zeros
             if np.any(ground_truth_gaze[b]):
-                cur_auc = metrics.auc(fpr, tpr)
+                cur_auc = metrics.roc_auc_score(ground_truth_gaze[b].flatten(),
+                        prediction_grid[b].flatten())
                 auc.update(cur_auc)
 
-                #  pdb.set_trace()
-                prediction_grid[b][prediction_grid[b] == 0] = 1e-6
-                ground_truth_gaze[b][ground_truth_gaze[b] == 0] = 1e-6
-                cur_kl = stats.entropy(prediction_grid[b].flatten(), ground_truth_gaze[b].flatten())
-                kl.update(cur_kl)
-
+            # KL divergence isn't undefined if ground_truth is all zeros
+            prediction_grid[b][prediction_grid[b] == 0] = 1e-6
+            ground_truth_gaze[b][ground_truth_gaze[b] == 0] = 1e-6
+            cur_kl = stats.entropy(prediction_grid[b].flatten(), ground_truth_gaze[b].flatten())
+            kl.update(cur_kl)
 
         #Compute loss
         loss_l2 = criterion(output, target_var)
@@ -138,11 +138,11 @@ def validate_stats(val_loader, model, criterion,criterion_b):
 def main():
     global args, best_prec1,weight_decay,momentum
 
-    # model = VideoGaze(bs=batch_size,side=side_w)
-    # checkpoint = torch.load('checkpoint_short.pth.tar')
+    model = VideoGaze(bs=batch_size,side=side_w)
+    checkpoint = torch.load('checkpoint_short.pth.tar')
 
-    model = CompressedModel(bs=batch_size,side=side_w)
-    checkpoint = torch.load('checkpoint_compressed_short_combined.pth.tar')
+    # model = CompressedModel(bs=batch_size,side=side_w)
+    # checkpoint = torch.load('checkpoint_compressed_short_combined.pth.tar')
 
     model.load_state_dict(checkpoint['state_dict'])
     model.cuda()
